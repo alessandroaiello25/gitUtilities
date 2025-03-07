@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Script Interface</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            border: 1px solid #ccc;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        input, button {
+            display: block;
+            margin: 10px 0;
+            padding: 8px;
+            width: 100%;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Execute Script</h1>
+        <form id="scriptForm">
+            <label for="branch">Branch:</label>
+            <input type="text" id="branch" name="branch" placeholder="Enter branch">
+
+            <label for="wi">Work Item:</label>
+            <input type="text" id="wi" name="wi" placeholder="Enter work item">
+
+            <label for="packageOpt">Package Option:</label>
+            <input type="checkbox" id="packageOpt" name="packageOpt">
+
+            <label for="directory">Directory:</label>
+            <input type="text" id="directory" name="directory" placeholder="Select directory" readonly>
+            <button type="button" id="selectDirBtn">Select Directory</button>
+
+            <button type="button" id="submitBtn">Submit</button>
+        </form>
+
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        document.getElementById('selectDirBtn').addEventListener('click', async () => {
+            const directoryHandle = await window.showDirectoryPicker();
+            document.getElementById('directory').value = directoryHandle.name;
+        });
+
+        document.getElementById('submitBtn').addEventListener('click', async () => {
+            const branch = document.getElementById('branch').value;
+            const wi = document.getElementById('wi').value;
+            const packageOpt = document.getElementById('packageOpt').checked;
+            const directory = document.getElementById('directory').value;
+
+            const response = await fetch('/execute', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ branch, wi, packageOpt, directory })
+            });
+
+            const result = await response.json();
+            const resultDiv = document.getElementById('result');
+
+            if (response.ok) {
+                resultDiv.textContent = `Success: ${result.message}`;
+                resultDiv.style.color = 'green';
+            } else {
+                resultDiv.textContent = `Error: ${result.message}`;
+                resultDiv.style.color = 'red';
+            }
+        });
+    </script>
+</body>
+</html>
