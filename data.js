@@ -1,21 +1,28 @@
 const sqlite3 = require('sqlite3').verbose();
 const crypto = require('crypto');
-const fs = require('fs')
+const fs = require('fs');
 
-// Encryption key (should be stored securely, e.g., environment variables)
-//const ENCRYPTION_KEY = crypto.randomBytes(32).toString('hex');
+function decodeBase64(input) {
+    try {
+        const buffer = Buffer.from(input, 'base64');
+        return buffer.toString('utf8');
+    } catch (error) {
+        console.error('Error decoding Base64 string:', error);
+        return null;
+    }
+}
 
-var ENCRYPTION_KEY
+let ENCRYPTION_KEY;
 try {
-    ENCRYPTION_KEY = decodeBase64(JSON.parse(fs.readFileSync(__dirname+'/settings.json','utf-8')).key)
-} catch(e){
-    console.error('ERROR RETRIEVING ENC KEY')
-    return
+    ENCRYPTION_KEY = decodeBase64(JSON.parse(fs.readFileSync(__dirname + '/settings.json', 'utf-8')).key);
+} catch (e) {
+    console.error('ERROR RETRIEVING ENC KEY');
+    return;
 }
 
 const IV_LENGTH = 16; // AES block size
 
-// Function to encrypt data
+// Encrypt a given text using AES-256-CBC
 function encrypt(text) {
     const iv = crypto.randomBytes(IV_LENGTH);
     const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(ENCRYPTION_KEY, 'hex'), iv);
@@ -24,35 +31,16 @@ function encrypt(text) {
     return `${iv.toString('hex')}:${encrypted.toString('hex')}`;
 }
 
-function decodeBase64(input) {
-    try {
-      // Create a Buffer from the Base64 string
-      const buffer = Buffer.from(input, 'base64');
-      // Convert the Buffer to a UTF-8 string
-      return buffer.toString('utf8');
-    } catch (error) {
-      console.error('Error decoding Base64 string:', error);
-      return null;
-    }
-}
-
-
-// Function to decrypt data
+// Decrypt a given text using AES-256-CBC
 function decrypt(text) {
-    
     const [iv, encrypted] = text.split(':');
-    const decipher = crypto.createDecipheriv(
-        'aes-256-cbc',
-        Buffer.from(ENCRYPTION_KEY, 'hex'),
-        Buffer.from(iv, 'hex')
-    );
+    const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(ENCRYPTION_KEY, 'hex'), Buffer.from(iv, 'hex'));
     let decrypted = decipher.update(Buffer.from(encrypted, 'hex'));
     decrypted = Buffer.concat([decrypted, decipher.final()]);
     return decrypted.toString();
 }
 
-// Initialize SQLite database
-const db = new sqlite3.Database(__dirname+'/data.db', (err) => {
+const db = new sqlite3.Database(__dirname + '/data.db', (err) => {
     if (err) {
         console.error('Error connecting to SQLite:', err);
     } else {
@@ -61,7 +49,7 @@ const db = new sqlite3.Database(__dirname+'/data.db', (err) => {
     }
 });
 
-// Create table
+// Create the credentials table if it does not exist
 function createTable() {
     db.run(
         `CREATE TABLE IF NOT EXISTS credentials (
@@ -81,8 +69,8 @@ function createTable() {
     );
 }
 
-// Insert encrypted data
-function insertData(azureOrgUrl, project, repository, pat) {
+// Insert encrypted data with callback
+function insertData(azureOrgUrl, project, repository, pat, callback) {
     const encryptedPAT = encrypt(pat);
     db.run(
         `INSERT INTO credentials (azure_org_url, project, repository, encrypted_pat) VALUES (?, ?, ?, ?)`,
@@ -90,38 +78,69 @@ function insertData(azureOrgUrl, project, repository, pat) {
         (err) => {
             if (err) {
                 console.error('Error inserting data:', err);
+                callback(err);
             } else {
                 console.log('Data inserted successfully.');
+                callback(null);
             }
         }
     );
 }
 
-// Retrieve and decrypt data
+// Retrieve and decrypt data (the decrypted_pat property is exposed to the caller)
 function getData(callback) {
-
     db.all(`SELECT * FROM credentials`, [], (err, rows) => {
         if (err) {
             console.error('Error fetching data:', err);
+            callback(err, null);
         } else {
             const decryptedRows = rows.map((row) => ({
                 ...row,
                 decrypted_pat: decrypt(row.encrypted_pat),
             }));
-            callback(decryptedRows);
+            callback(null, decryptedRows);
         }
     });
 }
 
-// Example Usage
-// Uncomment to add a new record
-// insertData('https://dev.azure.com/organization', 'project-name', 'repository-name', 'your-personal-access-token');
+// Update the personal access token (PAT) for a given credential by id
+function updateData(id, newPat, callback) {
+    const encryptedPAT = encrypt(newPat);
+    db.run(
+        `UPDATE credentials SET encrypted_pat = ? WHERE id = ?`,
+        [encryptedPAT, id],
+        function (err) {
+            if (err) {
+                console.error('Error updating data:', err);
+                callback(err);
+            } else {
+                console.log(`Data updated successfully for id ${id}`);
+                callback(null);
+            }
+        }
+    );
+}
 
-// Uncomment to fetch and display data
-// getData((data) => {
-//     console.log('Decrypted Data:', data);
-// });
+// Delete a credential by id
+function deleteData(id, callback) {
+    db.run(
+        `DELETE FROM credentials WHERE id = ?`,
+        [id],
+        function (err) {
+            if (err) {
+                console.error('Error deleting data:', err);
+                callback(err);
+            } else {
+                console.log(`Data deleted successfully for id ${id}`);
+                callback(null);
+            }
+        }
+    );
+}
 
 module.exports = {
-    getData
-}
+    insertData,
+    getData,
+    updateData,
+    deleteData
+};

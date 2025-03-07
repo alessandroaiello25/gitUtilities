@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Update Azure Credential</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
+    <div class="container">
+      <a class="navbar-brand" href="/">Azure Credential Manager</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <h1 class="mb-4">Update Azure Credential</h1>
+
+    <!-- If credentials exist, display them in a table -->
+    <% if (credentials && credentials.length > 0) { %>
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>Azure Org URL</th>
+            <th>Project</th>
+            <th>Repository</th>
+            <th>Update Credential</th>
+            <th>Delete</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% credentials.forEach(function(credential) { %>
+            <tr>
+              <td><%= credential.azure_org_url %></td>
+              <td><%= credential.project %></td>
+              <td><%= credential.repository %></td>
+              <td>
+                <!-- Update Form -->
+                <form action="/update" method="post" class="d-flex">
+                  <input type="hidden" name="id" value="<%= credential.id %>">
+                  <input type="text" class="form-control me-2" name="pat" placeholder="New PAT" required>
+                  <button type="submit" class="btn btn-primary">Update</button>
+                </form>
+              </td>
+              <td>
+                <!-- Delete Form with Recycle Bin Icon -->
+                <form action="/delete" method="post" onsubmit="return confirm('Are you sure you want to delete this credential?');">
+                  <input type="hidden" name="id" value="<%= credential.id %>">
+                  <button type="submit" class="btn btn-danger">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </form>
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    <% } else { %>
+      <p>No credentials found.</p>
+    <% } %>
+
+    <a href="/" class="btn btn-secondary mt-3">Back to Home</a>
+  </div>
+
+  <!-- Toast Container (Shown if toast data is passed in) -->
+  <% if (typeof toast !== 'undefined' && toast) { %>
+    <div aria-live="polite" aria-atomic="true" class="position-fixed bottom-0 end-0 p-3">
+      <div class="toast" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="3000">
+        <div class="toast-header">
+          <strong class="me-auto">
+            <%= toast.type === 'success' ? 'Success' : 'Error' %>
+          </strong>
+          <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body">
+          <%= toast.message %>
+        </div>
+      </div>
+    </div>
+  <% } %>
+
+  <!-- Bootstrap JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <% if (typeof toast !== 'undefined' && toast) { %>
+    <script>
+      document.addEventListener("DOMContentLoaded", function(){
+        var toastEl = document.querySelector('.toast');
+        var toast = new bootstrap.Toast(toastEl);
+        toast.show();
+      });
+    </script>
+  <% } %>
+</body>
+</html>

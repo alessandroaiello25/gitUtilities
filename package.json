@@ -12,6 +12,7 @@
     "axios": "^1.7.9",
     "azure-devops-node-api": "^14.1.0",
     "crypto": "^1.0.1",
+    "ejs": "^3.1.10",
     "express": "^4.21.2",
     "open": "^10.1.0",
     "sqlite3": "^5.1.7",

@@ -1,57 +1,101 @@
-// Backend: Node.js Express server
 const express = require('express');
-const fs = require('fs');
 const path = require('path');
-const branchWI = require('./branchWI');
-const testClasses = require('./testClasses');
-const packageXml = require('./packageXml');
-const br = require('./branch');
+const data = require('./data'); // External module with business logic
 
 const app = express();
-const PORT = 3000;
+app.use(express.urlencoded({ extended: true }));
 
-// Middleware to parse JSON and serve static files
-app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+// Set EJS as the templating engine and define the views directory
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
 
-// Endpoint to execute script logic
-app.post('/execute', async (req, res) => {
-    const { branch, wi, packageOpt, directory } = req.body;
+// Home page route
+app.get('/', (req, res) => {
+    res.render('index');
+});
 
-    let TARGET_BRANCH = branch;
+// -------------------------------
+// Insert Credential Page & Route
+// -------------------------------
+app.get('/insert', (req, res) => {
+    res.render('insert',{toast: null});
+});
 
-    try {
-        if (wi) {
-            TARGET_BRANCH = await branchWI.getWorkItemsByStatus(wi);
-        }
+app.post('/insert', (req, res) => {
+  const { azure_org_url, project, repository, pat } = req.body;
+  data.insertData(azure_org_url, project, repository, pat, (err) => {
+      if (err) {
+          res.render('insert', { toast: { type: 'error', message: 'Error inserting data.' } });
+      } else {
+          res.render('insert', { toast: { type: 'success', message: 'Credential inserted successfully.' } });
+      }
+  });
+});
 
-        if (!wi && !branch) {
-            branch = br.getCurrentBranch(directory || '.');
-            if (!branch) {
-                return res.status(400).json({ message: 'Unable to calculate current branch. Provide a work item code, target branch, or a directory with a git repository.' });
-            }
-            TARGET_BRANCH = branch;
-        }
-
-        if (!fs.existsSync(path.join(__dirname, 'branches')) && !wi) {
-            return res.status(400).json({ message: 'Unable to find branches file.' });
-        }
-
-        if (packageOpt) {
-            packageXml.mergePackageXmlFilesToTargetBranch(directory || '.', 'manifest/package.xml', TARGET_BRANCH);
+// -------------------------------
+// Update Credential Page & Route
+// -------------------------------
+app.get('/update', (req, res) => {
+    data.getData((err, rows) => {
+        if (err) {
+            res.send('Error retrieving data.');
         } else {
-            testClasses.mergeJsonFilesToTargetBranch(directory || '.', 'manifest/sfdc_test_classes.json', TARGET_BRANCH);
+            // Remove decrypted_pat property before sending to the client
+            const filteredRows = rows.map(({ decrypted_pat, id, ...rest }) => rest);
+            res.render('update', { credentials: filteredRows, toast: null });
         }
-
-        res.status(200).json({ message: 'Operation completed successfully!' });
-    } catch (error) {
-        res.status(500).json({ message: `Error: ${error.message}` });
-    }
+    });
 });
 
-// Start server
+app.post('/update', (req, res) => {
+  const { id, pat } = req.body;
+  data.updateData(id, pat, (err) => {
+      data.getData((err2, rows) => {
+          if (err || err2) {
+              const filteredRows = rows ? rows.map(({ decrypted_pat, ...rest }) => rest) : [];
+              res.render('update', {
+                  credentials: filteredRows,
+                  toast: { type: 'error', message: 'Error updating data.' }
+              });
+          } else {
+              const filteredRows = rows.map(({ decrypted_pat, ...rest }) => rest);
+              res.render('update', {
+                  credentials: filteredRows,
+                  toast: { type: 'success', message: 'Credential updated successfully.' }
+              });
+          }
+      });
+  });
+});
+
+// -------------------------------
+// Delete Credential Route
+// -------------------------------
+app.post('/delete', (req, res) => {
+  const { id } = req.body;
+  data.deleteData(id, (err) => {
+      data.getData((err2, rows) => {
+          if (err || err2) {
+              const filteredRows = rows ? rows.map(({ decrypted_pat, ...rest }) => rest) : [];
+              res.render('update', {
+                  credentials: filteredRows,
+                  toast: { type: 'error', message: 'Error deleting data.' }
+              });
+          } else {
+              const filteredRows = rows.map(({ decrypted_pat, ...rest }) => rest);
+              res.render('update', {
+                  credentials: filteredRows,
+                  toast: { type: 'success', message: 'Credential deleted successfully.' }
+              });
+          }
+      });
+  });
+});
+
+// -------------------------------
+// Start the Server
+// -------------------------------
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`);
+    console.log(`Server is running on port ${PORT}`);
 });
-
-// Save this file as "server.js"
