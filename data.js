@@ -12,12 +12,41 @@ function decodeBase64(input) {
     }
 }
 
+function encodeBase64(input) {
+    try {
+        const output = Buffer.from(input).toString('base64');
+        return output;
+    } catch (error) {
+        console.error('Error encoding Base64 string:', error);
+        return null;
+    }
+}
+
+
+// Encryption key (should be stored securely, e.g., environment variables)
+//const ENCRYPTION_KEY = crypto.randomBytes(32).toString('hex');
+
 let ENCRYPTION_KEY;
 try {
-    ENCRYPTION_KEY = decodeBase64(JSON.parse(fs.readFileSync(__dirname + '/settings.json', 'utf-8')).key);
+    if(!fs.existsSync(__dirname+'/settings.json')){
+        ENCRYPTION_KEY = crypto.randomBytes(32).toString('hex');
+        const encryptedKey = encodeBase64(ENCRYPTION_KEY)
+        fs.writeFileSync(__dirname+'/settings.json',JSON.stringify({key: encryptedKey}),'utf-8')
+    } 
+    
+    else {
+        ENCRYPTION_KEY = decodeBase64(JSON.parse(fs.readFileSync(__dirname + '/settings.json', 'utf-8')).key);
+    }
+    
+    
 } catch (e) {
     console.error('ERROR RETRIEVING ENC KEY');
     return;
+}
+
+if(!ENCRYPTION_KEY){
+    console.error('ERROR RETRIVING ENCRYPTION KEY')
+    return
 }
 
 const IV_LENGTH = 16; // AES block size
