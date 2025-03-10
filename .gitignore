@@ -3,3 +3,6 @@ data.db
 node_modules
 package-lock.json
 branchBackup
+branches
+branch2wi.json
+**/.vscode
