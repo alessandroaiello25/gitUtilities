@@ -110,7 +110,7 @@ app.get('/update', (req, res) => {
             res.send('Error retrieving data.');
         } else {
             // Remove decrypted_pat property before sending to the client
-            const filteredRows = rows.map(({ decrypted_pat, id, ...rest }) => rest);
+            const filteredRows = rows.map(({ decrypted_pat, ...rest }) => rest);
             res.render('update', { credentials: filteredRows, toast: null });
         }
     });
