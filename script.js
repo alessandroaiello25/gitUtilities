@@ -78,8 +78,15 @@ async function execute(){
 
     let sfv
 
-    db.getData(async(data)=>{
+    db.getData(async(err,data)=>{
 
+        if(err){
+            console.error(err)
+            return
+        }
+
+        console.log(data.project_path==process.cwd())
+        
         if(wi){
             const branchWI = require(__dirname+'/branchWI')
             TARGET_BRANCH = await branchWI.getWorkItemsByStatus(wi,data).catch((err) => console.error(err));
