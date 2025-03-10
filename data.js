@@ -57,6 +57,7 @@ function createTable() {
             azure_org_url TEXT,
             project TEXT,
             repository TEXT,
+            project_path TEXT,
             encrypted_pat TEXT
         )`,
         (err) => {
@@ -69,21 +70,37 @@ function createTable() {
     );
 }
 
-// Insert encrypted data with callback
-function insertData(azureOrgUrl, project, repository, pat, callback) {
-    const encryptedPAT = encrypt(pat);
-    db.run(
-        `INSERT INTO credentials (azure_org_url, project, repository, encrypted_pat) VALUES (?, ?, ?, ?)`,
-        [azureOrgUrl, project, repository, encryptedPAT],
-        (err) => {
-            if (err) {
+// Insert encrypted data only if the combination of azure_org_url, project, and repository does not exist.
+// Note: The duplicate check remains on the triple. The project_path is stored but not used for duplication.
+function insertData(azureOrgUrl, project, repository, projectPath, pat, callback) {
+    // First, check if the record already exists (based on azure_org_url, project, repository)
+    db.get(
+      `SELECT * FROM credentials WHERE azure_org_url = ? AND project = ? AND repository = ?`,
+      [azureOrgUrl, project, repository],
+      (err, row) => {
+        if (err) {
+          console.error('Error checking existing data:', err);
+          callback(err);
+        } else if (row) {
+          console.error('Credential already exists for the given azure_org_url, project, and repository.');
+          callback(new Error('Credential already exists.'));
+        } else {
+          const encryptedPAT = encrypt(pat);
+          db.run(
+            `INSERT INTO credentials (azure_org_url, project, repository, project_path, encrypted_pat) VALUES (?, ?, ?, ?, ?)`,
+            [azureOrgUrl, project, repository, projectPath, encryptedPAT],
+            function (err) {
+              if (err) {
                 console.error('Error inserting data:', err);
                 callback(err);
-            } else {
+              } else {
                 console.log('Data inserted successfully.');
                 callback(null);
+              }
             }
+          );
         }
+      }
     );
 }
 
@@ -98,6 +115,7 @@ function getData(callback) {
                 ...row,
                 decrypted_pat: decrypt(row.encrypted_pat),
             }));
+
             callback(null, decryptedRows);
         }
     });

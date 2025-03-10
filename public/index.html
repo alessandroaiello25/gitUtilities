@@ -1,4 +1,241 @@
 <!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Azure Credential Manager</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
+    <div class="container">
+      <a class="navbar-brand" href="#">Azure Credential Manager</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <h1 class="mb-4">Azure Credential Manager</h1>
+
+    <!-- Insert Form -->
+    <div class="mb-4">
+      <h2>Insert New Credential</h2>
+      <form id="insertForm">
+        <div class="mb-3">
+          <label for="azureOrgUrl" class="form-label">Azure Org URL</label>
+          <input type="text" class="form-control" id="azureOrgUrl" required>
+        </div>
+        <div class="mb-3">
+          <label for="project" class="form-label">Project</label>
+          <input type="text" class="form-control" id="project" required>
+        </div>
+        <div class="mb-3">
+          <label for="repository" class="form-label">Repository</label>
+          <input type="text" class="form-control" id="repository" required>
+        </div>
+        <div class="mb-3">
+          <label for="pat" class="form-label">PAT</label>
+          <input type="text" class="form-control" id="pat" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Insert Credential</button>
+      </form>
+    </div>
+
+    <!-- Table of Credentials -->
+    <div>
+      <h2>Existing Credentials</h2>
+      <table class="table table-striped" id="credentialsTable">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Azure Org URL</th>
+            <th>Project</th>
+            <th>Repository</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Dynamically loaded rows go here -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Modal for Updating PAT -->
+  <div class="modal fade" id="updateModal" tabindex="-1" aria-labelledby="updateModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <form id="updateForm" class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="updateModalLabel">Update PAT</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="updateId">
+          <div class="mb-3">
+            <label for="updatePat" class="form-label">New PAT</label>
+            <input type="text" class="form-control" id="updatePat" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Update Credential</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div aria-live="polite" aria-atomic="true" class="position-fixed bottom-0 end-0 p-3" style="z-index: 9999">
+    <div class="toast" id="toastMsg" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="3000">
+      <div class="toast-header">
+        <strong class="me-auto" id="toastTitle">Message</strong>
+        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+      <div class="toast-body" id="toastBody">Toast message</div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Toast elements
+    const toastEl = document.getElementById('toastMsg');
+    const toastTitle = document.getElementById('toastTitle');
+    const toastBody = document.getElementById('toastBody');
+    let toast;
+
+    // On page load
+    document.addEventListener('DOMContentLoaded', () => {
+      toast = new bootstrap.Toast(toastEl);
+
+      // Load credentials into the table
+      loadCredentials();
+
+      // Handle Insert Form submission
+      document.getElementById('insertForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const azure_org_url = document.getElementById('azureOrgUrl').value;
+        const project = document.getElementById('project').value;
+        const repository = document.getElementById('repository').value;
+        const pat = document.getElementById('pat').value;
+
+        fetch('/api/credentials', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ azure_org_url, project, repository, pat })
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.error) {
+            showToast('Error', data.error);
+          } else {
+            showToast('Success', data.message);
+            document.getElementById('insertForm').reset();
+            loadCredentials();
+          }
+        })
+        .catch(err => showToast('Error', err.message));
+      });
+
+      // Handle Update Form submission
+      document.getElementById('updateForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const id = document.getElementById('updateId').value;
+        const pat = document.getElementById('updatePat').value;
+
+        fetch('/api/credentials/' + id, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pat })
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.error) {
+            showToast('Error', data.error);
+          } else {
+            showToast('Success', data.message);
+            loadCredentials();
+            // Close the modal
+            const modalEl = document.getElementById('updateModal');
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            modal.hide();
+          }
+        })
+        .catch(err => showToast('Error', err.message));
+      });
+    });
+
+    // Load credentials from server
+    function loadCredentials() {
+      fetch('/api/credentials')
+        .then(res => res.json())
+        .then(credentials => {
+          const tbody = document.querySelector('#credentialsTable tbody');
+          tbody.innerHTML = '';
+
+          credentials.forEach(cred => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td>${cred.id}</td>
+              <td>${cred.azure_org_url}</td>
+              <td>${cred.project}</td>
+              <td>${cred.repository}</td>
+              <td>
+                <button class="btn btn-primary btn-sm me-2" onclick="showUpdateModal('${cred.id}')">
+                  Update
+                </button>
+                <button class="btn btn-danger btn-sm" onclick="deleteCredential('${cred.id}')">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </td>
+            `;
+            tbody.appendChild(tr);
+          });
+        })
+        .catch(err => showToast('Error', err.message));
+    }
+
+    // Show the update modal for a specific credential
+    function showUpdateModal(id) {
+      document.getElementById('updateId').value = id;
+      document.getElementById('updatePat').value = '';
+      const modalEl = document.getElementById('updateModal');
+      const modal = new bootstrap.Modal(modalEl);
+      modal.show();
+    }
+
+    // Delete a credential
+    function deleteCredential(id) {
+      if (!confirm('Are you sure you want to delete this credential?')) {
+        return;
+      }
+      fetch('/api/credentials/' + id, {
+        method: 'DELETE'
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.error) {
+          showToast('Error', data.error);
+        } else {
+          showToast('Success', data.message);
+          loadCredentials();
+        }
+      })
+      .catch(err => showToast('Error', err.message));
+    }
+
+    // Show a toast message
+    function showToast(title, message) {
+      toastTitle.textContent = title;
+      toastBody.textContent = message;
+      toast.show();
+    }
+  </script>
+</body>
+</html>
+
+<!-- <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -98,3 +335,4 @@
     </script>
 </body>
 </html>
+ -->
