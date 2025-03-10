@@ -181,7 +181,7 @@ async function processBranches(directory,tBranch,data,group,num) {
     rl.close();
 
     console.log(`Checkout and fetch from origin/${TARGET_BRANCH}`)
-    execSync(`git checkout ${TARGET_BRANCH} --quiet`,{cwd: directory})
+    execSync(`git checkout origin/${TARGET_BRANCH} --quiet`,{cwd: directory})
     execSync(`git fetch`,{cwd: directory})
     execSync(`git pull origin ${TARGET_BRANCH}`,{cwd: directory})
 }
