@@ -85,7 +85,9 @@ async function execute(){
             return
         }
 
-        console.log(data.project_path==process.cwd())
+        if(directory=='.' && data[0].project_path!=process.cwd()){
+            directory = data[0].project_path
+        }
         
         if(wi){
             const branchWI = require(__dirname+'/branchWI')
