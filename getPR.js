@@ -145,7 +145,7 @@ async function openInBrowser(url) {
     
 }
 
-db.getData(async(data)=>{
+db.getActiveCredential(async(data)=>{
 
     if(data){
         azure_url = data[0].azure_org_url

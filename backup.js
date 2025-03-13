@@ -57,7 +57,7 @@ async function execute(){
 
     let TARGET_BRANCH = branch
 
-    db.getData(async(data)=>{
+    db.getActiveCredential(async(data)=>{
         if(wi){
             const branchWI = require(__dirname+'/branchWI')
             TARGET_BRANCH = await branchWI.getWorkItemsByStatus(wi,data).catch((err) => console.error(err));

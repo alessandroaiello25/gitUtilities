@@ -56,4 +56,28 @@ export class CredentialListComponent implements OnInit {
       });
     }
   }
+
+  // Toggle the active flag using a checkbox.
+  toggleActive(cred: Credential, event: any): void {
+    // If the checkbox is checked and the credential is not already active,
+    // call the API to set it as active.
+    if (event.target.checked && !cred.active) {
+      this.credentialService.activateCredential(cred.id)
+        .subscribe({
+          next: res => {
+            this.toastService.showToast('Success', res.message);
+            this.loadCredentials();
+          },
+          error: err => {
+            this.toastService.showToast('Error', 'Error updating active credential');
+            console.error(err);
+          }
+        });
+    } else if (!event.target.checked && cred.active) {
+      // Optionally, you might not allow toggling off active since one should remain active.
+      // For now, if user tries to toggle off, reset the checkbox to true.
+      event.target.checked = true;
+      this.toastService.showToast('Info', 'At least one credential must remain active.');
+    }
+  }
 }
