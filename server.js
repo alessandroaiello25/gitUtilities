@@ -2,9 +2,11 @@
 const express = require('express');
 const path = require('path');
 const data = require('./data');
+const branchWI = require(__dirname + '/branchWI');
 
 const app = express();
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // CORS configuration (if Angular is served on a different domain/port)
 app.use((req, res, next) => {
@@ -16,6 +18,28 @@ app.use((req, res, next) => {
   }
   next();
 });
+
+// Endpoint: Retrieve branches mapping for a given work item id.
+app.get('/api/branches', (req, res) => {
+  const workitemId = req.query.workitemId;
+  if (!workitemId) {
+    return res.status(400).json({ error: 'workitemId query parameter is required.' });
+  }
+  data.getData((err, credentialData) => {
+    if (err) {
+      return res.status(500).json({ error: 'Error retrieving credential settings.' });
+    }
+    branchWI.getWorkItemsByStatus(workitemId, credentialData)
+      .then(result => {
+        res.json(result);
+      })
+      .catch(err => {
+        console.error(err);
+        res.status(500).json({ error: err.message });
+      });
+  });
+});
+
 
 // API Endpoints
 app.get('/api/credentials', (req, res) => {
@@ -72,6 +96,20 @@ app.delete('/api/credentials/:id', (req, res) => {
   data.deleteData(id, (err) => {
     if (err) return res.status(500).json({ error: 'Error deleting data.' });
     res.json({ message: 'Credential deleted successfully.' });
+  });
+});
+
+// New endpoint to update the active credential.
+app.put('/api/credentials/active', (req, res) => {
+  const { id } = req.body;
+  if (!id) {
+    return res.status(400).json({ error: 'Credential id is required.' });
+  }
+  data.updateActiveCredential(id, (err) => {
+    if (err) {
+      return res.status(500).json({ error: 'Error updating active credential.' });
+    }
+    res.json({ message: 'Active credential updated successfully.' });
   });
 });
 
