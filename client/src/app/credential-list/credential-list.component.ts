@@ -80,4 +80,9 @@ export class CredentialListComponent implements OnInit {
       this.toastService.showToast('Info', 'At least one credential must remain active.');
     }
   }
+
+  // New method to navigate to the insert credential page.
+  goToInsert(): void {
+    this.router.navigate(['/insert']);
+  }
 }
