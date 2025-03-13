@@ -139,7 +139,7 @@ async function execute(){
         let packageXml
         let pull_request
 
-        if(!complRel && !testClasses && !packageXml && !pull_request){
+        if(!complRel && !t && !package && !pr){
             complRel = true
         }
     
@@ -164,7 +164,7 @@ async function execute(){
             }
         
             else {
-                if(test){
+                if(t){
                     testClasses = require(__dirname+'/testClasses')
                     testClasses.mergeJsonFilesToTargetBranch(directory,'manifest/sfdc_test_classes.json',TARGET_BRANCH,group,num)
                 } else if(package) {
