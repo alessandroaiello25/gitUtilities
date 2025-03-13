@@ -87,7 +87,8 @@ function createTable() {
             project TEXT,
             repository TEXT,
             project_path TEXT,
-            encrypted_pat TEXT
+            encrypted_pat TEXT,
+            active INT
         )`,
         (err) => {
             if (err) {
@@ -116,8 +117,8 @@ function insertData(azureOrgUrl, project, repository, projectPath, pat, callback
         } else {
           const encryptedPAT = encrypt(pat);
           db.run(
-            `INSERT INTO credentials (azure_org_url, project, repository, project_path, encrypted_pat) VALUES (?, ?, ?, ?, ?)`,
-            [azureOrgUrl, project, repository, projectPath, encryptedPAT],
+            `INSERT INTO credentials (azure_org_url, project, repository, project_path, encrypted_pat, active) VALUES (?, ?, ?, ?, ?, ?)`,
+            [azureOrgUrl, project, repository, projectPath, encryptedPAT, 0],
             function (err) {
               if (err) {
                 console.error('Error inserting data:', err);
@@ -136,6 +137,23 @@ function insertData(azureOrgUrl, project, repository, projectPath, pat, callback
 // Retrieve and decrypt data (the decrypted_pat property is exposed to the caller)
 function getData(callback) {
     db.all(`SELECT * FROM credentials`, [], (err, rows) => {
+        if (err) {
+            console.error('Error fetching data:', err);
+            callback(err, null);
+        } else {
+            const decryptedRows = rows.map((row) => ({
+                ...row,
+                decrypted_pat: decrypt(row.encrypted_pat),
+            }));
+
+            callback(null, decryptedRows);
+        }
+    });
+}
+
+// Retrieve and decrypt data (the decrypted_pat property is exposed to the caller)
+function getActiveCredential(callback) {
+    db.all(`SELECT * FROM credentials WHERE active=1`, [], (err, rows) => {
         if (err) {
             console.error('Error fetching data:', err);
             callback(err, null);
@@ -185,9 +203,32 @@ function deleteData(id, callback) {
     );
 }
 
+function updateActiveCredential(activeId, callback) {
+    db.serialize(() => {
+      db.run(`UPDATE credentials SET active = 0`, (err) => {
+        if (err) {
+          console.error('Error resetting active flags:', err);
+          callback(err);
+        } else {
+          db.run(`UPDATE credentials SET active = 1 WHERE id = ?`, [activeId], function (err) {
+            if (err) {
+              console.error('Error setting active credential:', err);
+              callback(err);
+            } else {
+              console.log(`Credential ${activeId} set to active.`);
+              callback(null);
+            }
+          });
+        }
+      });
+    });
+  }
+
 module.exports = {
     insertData,
     getData,
+    getActiveCredential,
     updateData,
-    deleteData
+    deleteData,
+    updateActiveCredential
 };
