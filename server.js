@@ -85,6 +85,20 @@ app.delete('/api/credentials/:id', (req, res) => {
   });
 });
 
+// New endpoint to update the active credential.
+app.put('/api/credentials/active', (req, res) => {
+  const { id } = req.body;
+  if (!id) {
+    return res.status(400).json({ error: 'Credential id is required.' });
+  }
+  data.updateActiveCredential(id, (err) => {
+    if (err) {
+      return res.status(500).json({ error: 'Error updating active credential.' });
+    }
+    res.json({ message: 'Active credential updated successfully.' });
+  });
+});
+
 // Start the server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

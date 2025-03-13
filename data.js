@@ -116,8 +116,8 @@ function insertData(azureOrgUrl, project, repository, projectPath, pat, callback
         } else {
           const encryptedPAT = encrypt(pat);
           db.run(
-            `INSERT INTO credentials (azure_org_url, project, repository, project_path, encrypted_pat) VALUES (?, ?, ?, ?, ?)`,
-            [azureOrgUrl, project, repository, projectPath, encryptedPAT],
+            `INSERT INTO credentials (azure_org_url, project, repository, project_path, encrypted_pat, active) VALUES (?, ?, ?, ?, ?, ?)`,
+            [azureOrgUrl, project, repository, projectPath, encryptedPAT, 0],
             function (err) {
               if (err) {
                 console.error('Error inserting data:', err);
@@ -185,9 +185,31 @@ function deleteData(id, callback) {
     );
 }
 
+function updateActiveCredential(activeId, callback) {
+    db.serialize(() => {
+      db.run(`UPDATE credentials SET active = 0`, (err) => {
+        if (err) {
+          console.error('Error resetting active flags:', err);
+          callback(err);
+        } else {
+          db.run(`UPDATE credentials SET active = 1 WHERE id = ?`, [activeId], function (err) {
+            if (err) {
+              console.error('Error setting active credential:', err);
+              callback(err);
+            } else {
+              console.log(`Credential ${activeId} set to active.`);
+              callback(null);
+            }
+          });
+        }
+      });
+    });
+  }
+
 module.exports = {
     insertData,
     getData,
     updateData,
-    deleteData
+    deleteData,
+    updateActiveCredential
 };

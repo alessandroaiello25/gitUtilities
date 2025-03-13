@@ -8,7 +8,9 @@ export interface Credential {
   azure_org_url: string;
   project: string;
   repository: string;
-  project_path: string;  // New field for local Salesforce Project Path
+  project_path: string;
+  active: number;
+  // New field for local Salesforce Project Path
   // decrypted_pat is not sent to the client
 }
 
@@ -40,5 +42,9 @@ export class CredentialService {
 
   deleteCredential(id: number): Observable<any> {
     return this.http.delete<any>(`${this.apiUrl}/${id}`);
+  }
+
+  activateCredential(id: number): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/active`, {id: id})
   }
 }
