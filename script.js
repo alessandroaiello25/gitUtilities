@@ -78,7 +78,7 @@ async function execute(){
 
     let sfv
 
-    db.getData(async(err,data)=>{
+    db.getActiveCredential(async(err,data)=>{
 
         if(err){
             console.error(err)

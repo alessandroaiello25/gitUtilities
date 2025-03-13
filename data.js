@@ -87,7 +87,8 @@ function createTable() {
             project TEXT,
             repository TEXT,
             project_path TEXT,
-            encrypted_pat TEXT
+            encrypted_pat TEXT,
+            active INT
         )`,
         (err) => {
             if (err) {
@@ -136,6 +137,23 @@ function insertData(azureOrgUrl, project, repository, projectPath, pat, callback
 // Retrieve and decrypt data (the decrypted_pat property is exposed to the caller)
 function getData(callback) {
     db.all(`SELECT * FROM credentials`, [], (err, rows) => {
+        if (err) {
+            console.error('Error fetching data:', err);
+            callback(err, null);
+        } else {
+            const decryptedRows = rows.map((row) => ({
+                ...row,
+                decrypted_pat: decrypt(row.encrypted_pat),
+            }));
+
+            callback(null, decryptedRows);
+        }
+    });
+}
+
+// Retrieve and decrypt data (the decrypted_pat property is exposed to the caller)
+function getActiveCredential(callback) {
+    db.all(`SELECT * FROM credentials WHERE active=1`, [], (err, rows) => {
         if (err) {
             console.error('Error fetching data:', err);
             callback(err, null);
@@ -209,6 +227,7 @@ function updateActiveCredential(activeId, callback) {
 module.exports = {
     insertData,
     getData,
+    getActiveCredential,
     updateData,
     deleteData,
     updateActiveCredential
