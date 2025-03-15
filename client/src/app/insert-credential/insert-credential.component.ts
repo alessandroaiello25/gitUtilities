@@ -4,9 +4,10 @@ import { CredentialService } from '../credential.service';
 import { ToastService } from '../toast.service';
 
 @Component({
-  selector: 'app-insert-credential',
-  templateUrl: './insert-credential.component.html',
-  styleUrls: ['./insert-credential.component.css']
+    selector: 'app-insert-credential',
+    templateUrl: './insert-credential.component.html',
+    styleUrls: ['./insert-credential.component.css'],
+    standalone: false
 })
 export class InsertCredentialComponent {
   credential = {

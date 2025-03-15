@@ -1,31 +1,35 @@
 {
   "name": "client",
   "version": "0.0.0",
+  "main": "main.js",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "electron:serve": "ng build && electron .",
+    "electron:build": "electron-builder"
   },
   "private": true,
   "dependencies": {
-    "@angular/animations": "^17.3.0",
-    "@angular/common": "^17.3.0",
-    "@angular/compiler": "^17.3.0",
-    "@angular/core": "^17.3.0",
-    "@angular/forms": "^17.3.0",
-    "@angular/platform-browser": "^17.3.0",
-    "@angular/platform-browser-dynamic": "^17.3.0",
-    "@angular/router": "^17.3.0",
+    "@angular-builders/custom-webpack": "^19.0.0",
+    "@angular/animations": "^19.2.2",
+    "@angular/common": "^19.2.2",
+    "@angular/compiler": "^19.2.2",
+    "@angular/core": "^19.2.2",
+    "@angular/forms": "^19.2.2",
+    "@angular/platform-browser": "^19.2.2",
+    "@angular/platform-browser-dynamic": "^19.2.2",
+    "@angular/router": "^19.2.2",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
-    "zone.js": "~0.14.3"
+    "zone.js": "~0.15.0"
   },
   "devDependencies": {
-    "@angular-devkit/build-angular": "^17.3.12",
-    "@angular/cli": "^17.3.12",
-    "@angular/compiler-cli": "^17.3.0",
+    "@angular-devkit/build-angular": "^19.2.3",
+    "@angular/cli": "^19.2.3",
+    "@angular/compiler-cli": "^19.2.2",
     "@types/jasmine": "~5.1.0",
     "electron": "^35.0.1",
     "electron-builder": "^25.1.8",
@@ -35,6 +39,6 @@
     "karma-coverage": "~2.2.0",
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
-    "typescript": "~5.4.2"
+    "typescript": "~5.8.2"
   }
 }

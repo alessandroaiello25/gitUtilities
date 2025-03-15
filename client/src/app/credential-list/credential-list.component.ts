@@ -5,9 +5,10 @@ import { Router } from '@angular/router';
 import { ToastService } from '../toast.service';
 
 @Component({
-  selector: 'app-credential-list',
-  templateUrl: './credential-list.component.html',
-  styleUrls: ['./credential-list.component.css']
+    selector: 'app-credential-list',
+    templateUrl: './credential-list.component.html',
+    styleUrls: ['./credential-list.component.css'],
+    standalone: false
 })
 export class CredentialListComponent implements OnInit {
   credentials: Credential[] = [];
