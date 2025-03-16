@@ -9,6 +9,7 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "electron:serve": "ng build && electron .",
+    "electron:run": "electron .",
     "electron:build": "electron-builder"
   },
   "private": true,

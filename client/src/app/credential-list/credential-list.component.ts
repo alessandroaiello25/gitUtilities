@@ -12,6 +12,7 @@ import { ToastService } from '../toast.service';
 })
 export class CredentialListComponent implements OnInit {
   credentials: Credential[] = [];
+  isLoading: boolean = false;  // Controls the loader display
 
   constructor(
     private credentialService: CredentialService,
@@ -24,9 +25,11 @@ export class CredentialListComponent implements OnInit {
   }
 
   loadCredentials(): void {
+    this.isLoading = true;
     this.credentialService.getCredentials().subscribe({
       next: data => {
         this.credentials = data;
+        this.isLoading = false;
         // Log project_path values for internal use (not displayed)
         console.log('Loaded credentials with project paths:', this.credentials.map(c => c.project_path));
       },
