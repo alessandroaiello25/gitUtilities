@@ -5,9 +5,10 @@ import { CredentialService } from '../credential.service';
 import { ToastService } from '../toast.service';
 
 @Component({
-  selector: 'app-update-credential',
-  templateUrl: './update-credential.component.html',
-  styleUrls: ['./update-credential.component.css']
+    selector: 'app-update-credential',
+    templateUrl: './update-credential.component.html',
+    styleUrls: ['./update-credential.component.css'],
+    standalone: false
 })
 export class UpdateCredentialComponent implements OnInit {
   id!: number;

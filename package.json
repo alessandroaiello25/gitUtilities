@@ -2,8 +2,22 @@
   "name": "gitutilities",
   "version": "1.0.0",
   "main": "scripts.js",
+  "bin": {
+    "installer": "./installer.js",
+    "run": "./run.js"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build-installer": "pkg install.js --targets node16-win-x64 --output installer.exe",
+    "build-run": "pkg run.js --targets node16-win-x64 --output run.exe"
+  },
+  "pkg": {
+    "assets": [
+      "run.exe"
+    ],
+    "targets": [
+      "node16-win-x64"
+    ]
   },
   "author": "",
   "license": "ISC",
@@ -16,6 +30,7 @@
     "express": "^4.21.2",
     "open": "^10.1.0",
     "sqlite3": "^5.1.7",
+    "tree-kill": "^1.2.2",
     "xml2js": "^0.6.2"
   }
 }
