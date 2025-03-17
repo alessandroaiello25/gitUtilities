@@ -145,14 +145,22 @@ async function openInBrowser(url) {
     
 }
 
-db.getActiveCredential(async(data)=>{
+db.getActiveCredential(async(err,data)=>{
 
-    if(data){
-        azure_url = data[0].azure_org_url
-        project = data[0].project
-        repositoryId = data[0].repository
-        personalAccessToken = data[0].decrypted_pat
+    if(err){
+      console.error(err)
+      return
     }
+
+    if(!data || data.length==0){
+      console.error('No active credential found')
+      return
+    }
+
+    azure_url = data[0].azure_org_url
+    project = data[0].project
+    repositoryId = data[0].repository
+    personalAccessToken = data[0].decrypted_pat
 
     // Azure DevOps uses Basic Authentication with the PAT.
 // The username can be blank; encode as ":PAT" in base64.
