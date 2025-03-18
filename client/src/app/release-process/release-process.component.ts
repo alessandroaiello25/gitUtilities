@@ -76,7 +76,7 @@ export class ReleaseProcessComponent implements OnInit {
       }
       const query = `?workitemId=${this.state.workItemId}&credentialId=${this.credentialId}`;
       this.http.get<{ wiToBranch: { [key: string]: string[] }, branchToWI: { [branch: string]: string }, branches: string[] }>
-        (`${this.apiBase}/branches/from-workitem${query}`)
+        (`${this.apiBase}/branches${query}`)
         .subscribe({
           next: res => {
             const wiKey = this.state.workItemId.toString();
