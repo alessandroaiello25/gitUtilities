@@ -67,9 +67,10 @@ export class ReleaseProcessComponent implements OnInit {
    * If in manual mode, it splits the manualBranches text into an array.
    */
   onStep1Next(updatedState: Partial<ReleaseState>): void {
+    let oldWI = this.state.workItemId
     // Merge updated state
     this.state = { ...this.state, ...updatedState };
-    if (this.state.mode === 'workitem') {
+    if (this.state.mode === 'workitem' && (oldWI !== this.state.workItemId || this.state.computedBranches.length==0)) {
       if (!this.state.workItemId.trim()) {
         this.toastService.showToast('Error', 'Work item ID is required.');
         return;
@@ -98,9 +99,12 @@ export class ReleaseProcessComponent implements OnInit {
         });
     } else {
       // Manual mode: split the entered manualBranches text by newlines.
-      const lines = this.state.manualBranches.split('\n')
+      let lines = this.state.manualBranches.split('\n')
         .map(line => line.trim())
         .filter(line => line.length > 0);
+
+      lines = this.state.computedBranches.length>0 ? this.state.computedBranches : lines;
+
       if (lines.length === 0) {
         this.toastService.showToast('Error', 'Please enter at least one branch.');
         return;
