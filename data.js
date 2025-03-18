@@ -151,6 +151,22 @@ function getData(callback) {
     });
 }
 
+function getDataById(id,callback) {
+    db.all(`SELECT * FROM credentials WHERE id=?`, [id], (err, rows) => {
+        if (err) {
+            console.error('Error fetching data:', err);
+            callback(err, null);
+        } else {
+            const decryptedRows = rows.map((row) => ({
+                ...row,
+                decrypted_pat: decrypt(row.encrypted_pat),
+            }));
+
+            callback(null, decryptedRows);
+        }
+    });
+}
+
 // Retrieve and decrypt data (the decrypted_pat property is exposed to the caller)
 function getActiveCredential(callback) {
     db.all(`SELECT * FROM credentials WHERE active=1`, [], (err, rows) => {
@@ -227,6 +243,7 @@ function updateActiveCredential(activeId, callback) {
 module.exports = {
     insertData,
     getData,
+    getDataById,
     getActiveCredential,
     updateData,
     deleteData,

@@ -89,4 +89,10 @@ export class CredentialListComponent implements OnInit {
     this.router.navigate(['/insert']);
   }
 
+  // New method to navigate to the release wizard, passing the credential id.
+  startRelease(cred: Credential): void {
+    // Navigate to /release/step1/<credentialId>
+    this.router.navigate(['/release-process', cred.id]);
+  }
+
 }

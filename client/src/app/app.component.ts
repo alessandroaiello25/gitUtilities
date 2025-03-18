@@ -13,7 +13,7 @@ declare var bootstrap: any;
     standalone: false
 })
 export class AppComponent implements OnInit {
-  title = 'Azure Credential Manager';
+  title = 'Azure Salesforce Release Manager';
   toastMessage: ToastMessage | null = null;
   toastSubscription!: Subscription;
   

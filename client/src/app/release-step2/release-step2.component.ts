@@ -1,34 +1,29 @@
-// src/app/start-release-step2/start-release-step2.component.ts
-import { Component } from '@angular/core';
-import { Router } from '@angular/router';
-import { ReleaseService } from '../release.service';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { ReleaseState } from '../release-process/release-process.component';
 import { ToastService } from '../toast.service';
 
 @Component({
   selector: 'app-release-step2',
   templateUrl: './release-step2.component.html',
-  styleUrls: ['./release-step2.component.css']
+  styleUrls: ['./release-step2.component.css'],
+  standalone: false
 })
 export class ReleaseStep2Component {
-  constructor(
-    public releaseService: ReleaseService,
-    private router: Router,
-    private toastService: ToastService
-  ) {}
+  @Input() state!: ReleaseState;
+  @Output() back = new EventEmitter<void>();
+  @Output() finish = new EventEmitter<Partial<ReleaseState>>();
 
-  prevStep(): void {
-    this.router.navigate(['/release/step1']);
-  }
+  constructor(private toastService: ToastService) {}
 
-  finish(): void {
-    if (!this.releaseService.selectedBranch.trim()) {
+  onFinish(): void {
+    if (!this.state.selectedBranch.trim()) {
       this.toastService.showToast('Error', 'Please select a branch.');
       return;
     }
-    const summary = `Target Branch: ${this.releaseService.targetBranch}\n` +
-                    `Work Item ID: ${this.releaseService.workItemId}\n` +
-                    `Selected Branch: ${this.releaseService.selectedBranch}`;
-    this.toastService.showToast('Release Summary', summary);
-    // In a full implementation, you would trigger the release process now.
+    this.finish.emit({ selectedBranch: this.state.selectedBranch });
+  }
+
+  onBack(): void {
+    this.back.emit();
   }
 }

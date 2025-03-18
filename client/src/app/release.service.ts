@@ -10,11 +10,13 @@ export class ReleaseService {
   targetBranch: string = '';
   mode: 'workitem' | 'manual' = 'workitem';
   workItemId: string = '';
+  mBranchesStr: string = '';
   manualBranches: string[] = [];
   computedBranches: string[] = [];
   branchMapping: { [branch: string]: string } = {};
   wiToBranch: { [wi: string]: string[] } = {};
   selectedBranch: string = '';
+  credentialId: string = '';
 
   constructor(private http: HttpClient) {}
 

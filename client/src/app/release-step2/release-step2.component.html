@@ -1,21 +1,17 @@
-<div class="container mt-4">
-    <div class="card">
-      <div class="card-header bg-info text-white">
-        <h4>Release – Step 2: Select Branch</h4>
-      </div>
-      <div class="card-body">
-        <div *ngIf="releaseService.computedBranches && releaseService.computedBranches.length > 0">
-          <p>Select one branch for the given work item:</p>
-          <div *ngFor="let branch of releaseService.computedBranches" class="form-check">
-            <input class="form-check-input" type="radio" name="selectedBranch" [value]="branch" [(ngModel)]="releaseService.selectedBranch">
-            <label class="form-check-label">{{ branch }}</label>
-          </div>
-        </div>
-        <div class="mt-3">
-          <button class="btn btn-secondary me-2" (click)="prevStep()">Back</button>
-          <button class="btn btn-success" (click)="finish()">Finish</button>
-        </div>
-      </div>
+<div class="card">
+  <div class="card-header bg-info text-white">
+    <h4>Release – Step 2: Select Branch</h4>
+  </div>
+  <div class="card-body">
+    <p>Select one branch from the list:</p>
+    <div *ngFor="let branch of state.computedBranches" class="form-check">
+      <input class="form-check-input" type="radio" name="selectedBranch" [value]="branch"
+        [(ngModel)]="state.selectedBranch">
+      <label class="form-check-label">{{ branch }}</label>
+    </div>
+    <div class="mt-3">
+      <button class="btn btn-secondary me-2" (click)="onBack()">Back</button>
+      <button class="btn btn-success" (click)="onFinish()">Finish</button>
     </div>
   </div>
-  
+</div>

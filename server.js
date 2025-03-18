@@ -22,10 +22,14 @@ app.use((req, res, next) => {
 // Endpoint: Retrieve branches mapping for a given work item id.
 app.get('/api/branches', (req, res) => {
   const workitemId = req.query.workitemId;
+  const credentialId = req.query.credentialId;
   if (!workitemId) {
     return res.status(400).json({ error: 'workitemId query parameter is required.' });
   }
-  data.getData((err, credentialData) => {
+  if (!credentialId) {
+    return res.status(400).json({ error: 'credentialId query parameter is required.' });
+  }
+  data.getDataById(credentialId,(err, credentialData) => {
     if (err) {
       return res.status(500).json({ error: 'Error retrieving credential settings.' });
     }
