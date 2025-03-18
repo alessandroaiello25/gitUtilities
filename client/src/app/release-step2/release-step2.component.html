@@ -1,21 +1,43 @@
 <div class="card">
   <div class="card-header bg-info text-white">
-    <h4>Release – Step 2: Select Branch(es)</h4>
+    <h4>Release – Step 2: Select Branches</h4>
   </div>
   <div class="card-body">
-    <p>Select one or more branches from the list:</p>
-    <div *ngFor="let branch of state.computedBranches" class="form-check">
-      <input
-        class="form-check-input"
-        type="checkbox"
-        [value]="branch"
-        (change)="toggleSelection(branch, $event)"
-        [checked]="state.selectedBranches.includes(branch)"
-        id="branch-{{branch}}">
-      <label class="form-check-label" for="branch-{{branch}}">
-        {{ branch }}
-      </label>
+    <!-- Section A: Ambiguous Work Items -->
+    <div *ngIf="state.wiToBranch">
+      <div *ngFor="let wi of (state.wiToBranch | keyvalue)">
+        <!-- Only show if this WI has more than one associated branch -->
+        <div *ngIf="wi.value.length > 1" class="mb-3">
+          <p><strong>Work Item {{wi.key}} has multiple branches. Choose one:</strong></p>
+          <div *ngFor="let branch of wi.value" class="form-check">
+            <input class="form-check-input"
+                   type="radio"
+                   name="wi-{{wi.key}}"
+                   [value]="branch"
+                   [checked]="ambiguousSelections[wi.key] === branch"
+                   (change)="onAmbiguousChange(wi.key, branch)">
+            <label class="form-check-label">{{ branch }}</label>
+          </div>
+        </div>
+      </div>
     </div>
+
+    <!-- Section B: Final Branch Selection -->
+    <div class="mt-4">
+      <p><strong>Select final branches for the release:</strong></p>
+      <div *ngFor="let branch of finalBranches" class="form-check">
+        <input class="form-check-input" type="checkbox" 
+               [value]="branch"
+               (change)="toggleFinalSelection(branch, $event)"
+               [checked]="finalSelectedBranches.includes(branch)"
+               id="final-{{branch}}">
+        <label class="form-check-label" for="final-{{branch}}">
+          {{ branch }}
+        </label>
+      </div>
+    </div>
+
+    <!-- Navigation Buttons -->
     <div class="mt-3">
       <button class="btn btn-secondary me-2" (click)="onBack()">Back</button>
       <button class="btn btn-success" (click)="onFinish()">Finish</button>
