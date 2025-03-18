@@ -85,6 +85,11 @@ async function execute(){
             return
         }
 
+        if(!data || (data.length==0)){
+            console.error('Non ci sono connessioni attive su Azure')
+            return
+        }
+
         if(directory=='.' && data[0].project_path!=process.cwd()){
             directory = data[0].project_path
         }

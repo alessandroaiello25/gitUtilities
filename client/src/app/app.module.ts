@@ -2,7 +2,7 @@
 import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';           // For ngModel
-import { HttpClientModule } from '@angular/common/http';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 
 import { AppRoutingModule } from './app-routing.module'; // Routing
 import { AppComponent } from './app.component';
@@ -23,13 +23,9 @@ import { ReleaseProcessComponent } from './release-process/release-process.compo
     ReleaseStep2Component,
     ReleaseProcessComponent
   ],
-  imports: [
-    BrowserModule,
-    FormsModule,          // Required for ngModel
-    HttpClientModule,     // Required for HTTP
-    AppRoutingModule      // Provides routerLink, router-outlet
-  ],
-  providers: [],
-  bootstrap: [AppComponent]
-})
+  bootstrap: [AppComponent], imports: [BrowserModule,
+    FormsModule, // Required for HTTP
+    AppRoutingModule // Provides routerLink, router-outlet
+], providers: [provideHttpClient(withInterceptorsFromDi())] })
+
 export class AppModule { }
