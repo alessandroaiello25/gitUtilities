@@ -1,0 +1,18 @@
+<div class="container mt-4">
+    <h2>Release Process</h2>
+    <!-- Optionally show some credential info here if needed -->
+    <div *ngIf="currentStep === 1">
+      <app-release-step1
+        [state]="state"
+        (nextStep)="onStep1Next($event)">
+      </app-release-step1>
+    </div>
+    <div *ngIf="currentStep === 2">
+      <app-release-step2
+        [state]="state"
+        (back)="onStep2Back()"
+        (finish)="onFinish($event)">
+      </app-release-step2>
+    </div>
+  </div>
+  
