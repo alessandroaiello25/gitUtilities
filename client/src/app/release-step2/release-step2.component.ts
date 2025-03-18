@@ -15,12 +15,25 @@ export class ReleaseStep2Component {
 
   constructor(private toastService: ToastService) {}
 
+  // Toggle branch selection in the selectedBranches array.
+  toggleSelection(branch: string, event: any): void {
+    if (event.target.checked) {
+      // Add branch if not already selected.
+      if (!this.state.selectedBranches.includes(branch)) {
+        this.state.selectedBranches.push(branch);
+      }
+    } else {
+      // Remove branch.
+      this.state.selectedBranches = this.state.selectedBranches.filter(b => b !== branch);
+    }
+  }
+
   onFinish(): void {
-    if (!this.state.selectedBranch.trim()) {
-      this.toastService.showToast('Error', 'Please select a branch.');
+    if (!this.state.selectedBranches || this.state.selectedBranches.length === 0) {
+      this.toastService.showToast('Error', 'Please select at least one branch.');
       return;
     }
-    this.finish.emit({ selectedBranch: this.state.selectedBranch });
+    this.finish.emit({ selectedBranches: this.state.selectedBranches });
   }
 
   onBack(): void {

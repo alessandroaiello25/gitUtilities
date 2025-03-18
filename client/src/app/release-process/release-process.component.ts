@@ -1,17 +1,17 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { CredentialService, Credential } from '../credential.service';
 import { ToastService } from '../toast.service';
 import { HttpClient } from '@angular/common/http';
+import { CredentialService } from '../credential.service';
 
+// Define the interface for the release state.
 export interface ReleaseState {
   targetBranch: string;
   mode: 'workitem' | 'manual';
   workItemId: string;
-  manualBranches: string; // A string containing branch names (for manual mode)
+  manualBranches: string;
   computedBranches: string[];
-  selectedBranch: string;
-  // Optionally, store mappings for further use
+  selectedBranches: string[]; // now supports multiple selections
   wiToBranch?: { [key: string]: string[] };
   branchMapping?: { [branch: string]: string };
 }
@@ -23,18 +23,19 @@ export interface ReleaseState {
   standalone: false
 })
 export class ReleaseProcessComponent implements OnInit {
+  // The credential id is passed via the route.
   credentialId: string = '';
-  credential!: Credential;
+  // The overall state for the release process.
   state: ReleaseState = {
     targetBranch: '',
     mode: 'workitem',
     workItemId: '',
     manualBranches: '',
     computedBranches: [],
-    selectedBranch: ''
+    selectedBranches: []
   };
 
-  // Manage current step: 1 = input (child step1), 2 = branch selection (child step2)
+  // Manage the current wizard step (1 or 2)
   currentStep: number = 1;
   // Base API URL – adjust as needed.
   private apiBase: string = 'http://localhost:3000/api';
@@ -42,9 +43,9 @@ export class ReleaseProcessComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private credentialService: CredentialService,
     private toastService: ToastService,
-    private http: HttpClient
+    private http: HttpClient,
+    private credentialService: CredentialService
   ) {}
 
   ngOnInit(): void {
@@ -56,29 +57,28 @@ export class ReleaseProcessComponent implements OnInit {
       return;
     }
     this.credentialId = credId;
-    // Instead of loading full credential details here,
-    // we assume that later the backend will check the credential by id.
-    // (If needed, you can load credential details here.)
+    // (We assume the backend will use this credentialId to get the correct Azure settings.)
   }
 
-  // This method is called by the Step1 child when the user submits input.
+  /**
+   * This method is called when the child step 1 component emits its "nextStep" event.
+   * It receives a partial updated ReleaseState from the child.
+   * If the release mode is workitem, it calls the backend with both workItemId and credentialId.
+   * If in manual mode, it splits the manualBranches text into an array.
+   */
   onStep1Next(updatedState: Partial<ReleaseState>): void {
-    // Merge the input state.
+    // Merge updated state
     this.state = { ...this.state, ...updatedState };
-
     if (this.state.mode === 'workitem') {
-      // Validate required field.
       if (!this.state.workItemId.trim()) {
         this.toastService.showToast('Error', 'Work item ID is required.');
         return;
       }
-      // Call the backend endpoint with workItemId and credentialId.
       const query = `?workitemId=${this.state.workItemId}&credentialId=${this.credentialId}`;
-      this.http.get<{ wiToBranch: { [key: string]: string[] }, branchToWI: { [key: string]: string }, branches: string[] }>
+      this.http.get<{ wiToBranch: { [key: string]: string[] }, branchToWI: { [branch: string]: string }, branches: string[] }>
         (`${this.apiBase}/branches/from-workitem${query}`)
         .subscribe({
           next: res => {
-            // Look up mapping for the provided work item ID.
             const wiKey = this.state.workItemId.toString();
             if (res.wiToBranch && res.wiToBranch[wiKey]) {
               this.state.computedBranches = res.wiToBranch[wiKey];
@@ -91,13 +91,8 @@ export class ReleaseProcessComponent implements OnInit {
               this.toastService.showToast('Error', 'No branches found for this work item.');
               return;
             }
-            // Auto-select if only one branch is returned.
-            if (this.state.computedBranches.length === 1) {
-              this.state.selectedBranch = this.state.computedBranches[0];
-            } else {
-              // Otherwise, default to first branch.
-              this.state.selectedBranch = this.state.computedBranches[0];
-            }
+            // Initialize selectedBranches with the computed branches.
+            this.state.selectedBranches = [...this.state.computedBranches];
             this.currentStep = 2;
           },
           error: err => {
@@ -107,7 +102,7 @@ export class ReleaseProcessComponent implements OnInit {
           }
         });
     } else {
-      // Manual mode: split the manualBranches string by newline.
+      // Manual mode: split the entered manualBranches text by newlines.
       const lines = this.state.manualBranches.split('\n')
         .map(line => line.trim())
         .filter(line => line.length > 0);
@@ -116,24 +111,30 @@ export class ReleaseProcessComponent implements OnInit {
         return;
       }
       this.state.computedBranches = lines;
-      this.state.selectedBranch = lines[0];
+      this.state.selectedBranches = [...lines];
       this.currentStep = 2;
     }
   }
 
-  // Called by the Step2 child when the user clicks "Back" from Step2.
+  // Called when the child step 2 component emits a "back" event.
   onStep2Back(): void {
     this.currentStep = 1;
   }
 
-  // Called by the Step2 child when the user finishes selection.
+  // Called when the child step 2 component emits a "finish" event.
   onFinish(updatedState: Partial<ReleaseState>): void {
+    // Merge final state
     this.state = { ...this.state, ...updatedState };
+    if (!this.state.selectedBranches || this.state.selectedBranches.length === 0) {
+      this.toastService.showToast('Error', 'Please select at least one branch.');
+      return;
+    }
     const summary = `Credential ID: ${this.credentialId}\n` +
                     `Target Branch: ${this.state.targetBranch}\n` +
-                    `Work Item: ${this.state.mode === 'workitem' ? this.state.workItemId : 'Manual'}\n` +
-                    `Selected Branch: ${this.state.selectedBranch}`;
+                    `Mode: ${this.state.mode}\n` +
+                    `Work Item ID: ${this.state.mode === 'workitem' ? this.state.workItemId : 'Manual'}\n` +
+                    `Selected Branch(es): ${this.state.selectedBranches.join(', ')}`;
     this.toastService.showToast('Release Summary', summary);
-    // Here, you would trigger the release process with the complete state.
+    // Here you would trigger the next part of the release process.
   }
 }
