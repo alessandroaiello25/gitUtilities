@@ -119,7 +119,7 @@ async function getWorkItemsByStatus(prId, data) {
     }
   }
   
-  // Also process the primary work item.
+  /* // Also process the primary work item.
   if (queryResult.length > 0) {
     const primaryWI = queryResult[0];
     const wiId = primaryWI.id.toString();
@@ -143,7 +143,7 @@ async function getWorkItemsByStatus(prId, data) {
         branchToWI[branchName] = wiId;
       });
     }
-  }
+  } */
   
   // Deduplicate branch names.
   const dedupedBranches = Array.from(new Set(allBranches));

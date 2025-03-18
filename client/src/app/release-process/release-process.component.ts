@@ -79,12 +79,7 @@ export class ReleaseProcessComponent implements OnInit {
         (`${this.apiBase}/branches${query}`)
         .subscribe({
           next: res => {
-            const wiKey = this.state.workItemId.toString();
-            if (res.wiToBranch && res.wiToBranch[wiKey]) {
-              this.state.computedBranches = res.wiToBranch[wiKey];
-            } else {
-              this.state.computedBranches = res.branches;
-            }
+            this.state.computedBranches = res.branches;
             this.state.wiToBranch = res.wiToBranch;
             this.state.branchMapping = res.branchToWI;
             if (this.state.computedBranches.length === 0) {
