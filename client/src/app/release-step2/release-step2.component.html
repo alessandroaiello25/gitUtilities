@@ -4,7 +4,7 @@
   </div>
   <div class="card-body">
     <!-- Section A: Ambiguous Work Items -->
-    <div *ngIf="state.wiToBranch">
+    <div *ngIf="checkAmb">
       <div *ngFor="let wi of (state.wiToBranch | keyvalue)">
         <!-- Only show if this WI has more than one associated branch -->
         <div *ngIf="wi.value.length > 1" class="mb-3">
