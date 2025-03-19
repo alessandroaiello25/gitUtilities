@@ -165,7 +165,7 @@ async function execute(){
         else {
             if(pr){
                 pull_request = require(__dirname+'/pull_request')
-                pull_request.processBranches(TARGET_BRANCH,data,group,num)
+                pull_request.processBranches(directory,TARGET_BRANCH,data,group,num)
             }
         
             else {
