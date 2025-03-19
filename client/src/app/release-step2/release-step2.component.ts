@@ -81,6 +81,7 @@ export class ReleaseStep2Component {
     this.finalBranches = Array.from(finalSet);
     // By default, all final branches are selected.
     this.finalSelectedBranches = [...this.finalBranches];
+    this.state.computedBranches = [...this.finalBranches]
   }
 
   // Called when the user changes the selection for an ambiguous work item.
