@@ -98,7 +98,7 @@ async function queryPullRequestsRelatedToBranch(branch) {
     
     console.log(`Found ${allRelatedPRs.length} pull request(s) related to branch '${branch}':`);
     for(const pr of allRelatedPRs) {
-      console.log(`- PR ID: ${pr.pullRequestId}, Title: ${pr.title}, ${pr.creationDate}, source: ${pr.sourceRefName}, target: ${pr.targetRefName}`);
+      console.log(`- PR ID: ${pr.pullRequestId}, Title: ${pr.title}, ${pr.creationDate}, source: ${pr.sourceRefName}, target: ${pr.targetRefName}, link: ${getPrLink(pr.pullRequestId)}`);
       if(view){
         await openInBrowser(getPrLink(pr.pullRequestId))
         await waitForCompletion();
