@@ -15,20 +15,29 @@ async function validateDeploy(targetOrg,directory,branch){
             execSync(`git pull origin ${branch}`,{cwd: directory})
         }
 
-        let command = `sf project deploy validate -o ${targetOrg} -x manifest/package.xml`
+        let command = `sf project deploy $validate -o ${targetOrg} -x manifest/package.xml`
 
         let jsonTest = JSON.parse(fs.readFileSync(directory+'/'+FILE_PATH,'utf-8'))
 
         if('key1' in jsonTest){
             let testClasses = jsonTest.key1
             if(!testClasses){
-                testClasses = 'CollectionUtilTest'
+                command.replace('$validate','start --dry-run')
+                command += ` -l NoTestRun -w 5`
+            } else {
+                command.replace('$validate','validate')
+                testClasses = testClasses.replaceAll(',',' ')
+                command += ` -l RunSpecifiedTests -t ${testClasses} -w 5`
             }
-            testClasses = testClasses.replaceAll(',',' ')
-            command += ` -l RunSpecifiedTests -t ${testClasses} -w 5`
+        
 
             console.log(command)
 
+            execSync(`${command}`,{cwd: directory})
+        } else {
+            command.replace('$validate','start --dry-run')
+            command += ` -l NoTestRun -w 5`
+            console.log(command)
             execSync(`${command}`,{cwd: directory})
         }
 

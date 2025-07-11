@@ -15,6 +15,7 @@ var group
 var sf = false
 var targetOrg
 var val = true
+var message
 
 for(let i=0;i<process.argv.length;i++){
     switch(process.argv[i]){
@@ -67,6 +68,10 @@ for(let i=0;i<process.argv.length;i++){
         case '-val':
             val = true
             targetOrg = process.argv[i+1]
+            break
+
+        case '-m':
+            message = process.argv[i+1]
             break
 
     }
@@ -133,12 +138,6 @@ async function execute(){
         if(createBrs){
             return
         }
-
-        if(val && targetOrg){
-            sfv = require('./sf')
-            sfv.validateDeploy(targetOrg,directory,TARGET_BRANCH)
-            return
-        }
     
         let testClasses
         let packageXml
@@ -150,22 +149,17 @@ async function execute(){
     
         if(complRel){
             pull_request = require(__dirname+'/pull_request')
-            await pull_request.processBranches(directory,TARGET_BRANCH,data,group,num)
+            await pull_request.processBranches(directory,TARGET_BRANCH,data,group,num,message)
             testClasses = require(__dirname+'/testClasses')
             await testClasses.mergeJsonFilesToTargetBranch(directory,'manifest/sfdc_test_classes.json',TARGET_BRANCH,group,num)
             packageXml = require(__dirname+'/packageXml.js')
             await packageXml.mergePackageXmlFilesToTargetBranch(directory,'manifest/package.xml',TARGET_BRANCH,group,num)
-
-            if(sf && targetOrg){
-                sfv = require('./sf')
-                sfv.validateDeploy(targetOrg,directory)
-            }
         }
     
         else {
             if(pr){
                 pull_request = require(__dirname+'/pull_request')
-                pull_request.processBranches(TARGET_BRANCH,data,group,num)
+                pull_request.processBranches(directory,TARGET_BRANCH,data,group,num,message)
             }
         
             else {
@@ -177,6 +171,11 @@ async function execute(){
                     packageXml.mergePackageXmlFilesToTargetBranch(directory,'manifest/package.xml',TARGET_BRANCH,group,num)
                 }
             }
+        }
+
+        if(sf && targetOrg){
+            sfv = require('./sf')
+            sfv.validateDeploy(targetOrg,directory)
         }
     
     })

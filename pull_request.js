@@ -47,7 +47,7 @@ function isList(element) {
 }
   
 
-async function createPullRequest(branch) {
+async function createPullRequest(branch,message) {
     
     const url = `${AZURE_ORG_URL}/${PROJECT}/_apis/git/repositories/${REPOSITORY}/pullrequests?api-version=7.1-preview.1`;
 
@@ -76,7 +76,7 @@ async function createPullRequest(branch) {
         sourceRefName: `refs/heads/${branch}`,
         targetRefName: `refs/heads/${TARGET_BRANCH}`,
         title: `${branch}`,
-        description: `${branch}`,
+        description: `${branch}${message ? ' - '+message : ''}`,
         reviewers: [], // Add reviewers if needed,
         workItemRefs: workItemRefs
     };
@@ -98,15 +98,44 @@ async function createPullRequest(branch) {
     }
 }
 
-async function waitForCompletion() {
+function checkBranchStatus(directory){
+
+    return new Promise((resolve, reject) => {
+        setTimeout(() => {
+            execSync(`git fetch`,{cwd: directory})
+            execSync(`git log -n 3 origin/${TARGET_BRANCH} --oneline > ${__dirname}/fileCompare.log`,{cwd: directory})
+            let fileCompCont = fs.readFileSync(__dirname+'/fileCompare.log','utf-8')
+            let fileContent = fs.readFileSync(__dirname+'/file.log','utf-8')
+            if(fileCompCont==fileContent){
+                console.log('No changes detected')
+                checkBranchStatus(directory)
+                .then(() => {
+                    resolve()
+                })
+            } else {
+                console.log('Changes detected')
+                resolve()
+            }
+        }, 5000);
+    })
+
+    
+}
+
+async function waitForCompletion(directory) {
     return new Promise((resolve) => {
-        rl.question("Resolve the current PR in Azure DevOps and press ENTER to continue...", () => {
-            resolve();
-        });
+        execSync(`git fetch`,{cwd: directory})
+        execSync(`git log -n 3 origin/${TARGET_BRANCH} --oneline > ${__dirname}/file.log`,{cwd: directory})
+        
+        checkBranchStatus(directory)
+        .then(() => {
+            console.log('PR completed')
+            resolve()
+        })
     });
 }
 
-async function processBranches(directory,tBranch,data,group,num) {
+async function processBranches(directory,tBranch,data,group,num,message) {
 
     if(tBranch){
         TARGET_BRANCH = tBranch
@@ -142,11 +171,11 @@ async function processBranches(directory,tBranch,data,group,num) {
     for (const branch of branches) {
         if(branch!=TARGET_BRANCH){
             console.log(`Processing branch: ${branch}`);
-            const prLink = await createPullRequest(branch);
+            const prLink = await createPullRequest(branch,message);
             if (prLink) {
                 console.log(`Open this link to resolve conflicts: ${prLink}`);
                 await openInBrowser(prLink)
-                await waitForCompletion();
+                await waitForCompletion(directory);
 
                 if(!tBranch2WI[TARGET_BRANCH]){
                     tBranch2WI[TARGET_BRANCH] = []
@@ -181,8 +210,13 @@ async function processBranches(directory,tBranch,data,group,num) {
     rl.close();
 
     console.log(`Checkout and fetch from origin/${TARGET_BRANCH}`)
-    execSync(`git checkout origin/${TARGET_BRANCH} --quiet`,{cwd: directory})
     execSync(`git fetch`,{cwd: directory})
+    try {
+        execSync(`git checkout -b ${TARGET_BRANCH} origin/${TARGET_BRANCH} --quiet`,{cwd: directory})
+    } catch(err){
+        execSync(`git checkout ${TARGET_BRANCH} --quiet`,{cwd: directory})
+    }
+    
     execSync(`git pull origin ${TARGET_BRANCH}`,{cwd: directory})
 }
 
