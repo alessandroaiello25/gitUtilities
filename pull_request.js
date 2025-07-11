@@ -47,7 +47,7 @@ function isList(element) {
 }
   
 
-async function createPullRequest(branch) {
+async function createPullRequest(branch,message) {
     
     const url = `${AZURE_ORG_URL}/${PROJECT}/_apis/git/repositories/${REPOSITORY}/pullrequests?api-version=7.1-preview.1`;
 
@@ -76,7 +76,7 @@ async function createPullRequest(branch) {
         sourceRefName: `refs/heads/${branch}`,
         targetRefName: `refs/heads/${TARGET_BRANCH}`,
         title: `${branch}`,
-        description: `${branch}`,
+        description: `${branch}${message ? ' - '+message : ''}`,
         reviewers: [], // Add reviewers if needed,
         workItemRefs: workItemRefs
     };
@@ -135,7 +135,7 @@ async function waitForCompletion(directory) {
     });
 }
 
-async function processBranches(directory,tBranch,data,group,num) {
+async function processBranches(directory,tBranch,data,group,num,message) {
 
     if(tBranch){
         TARGET_BRANCH = tBranch
@@ -171,7 +171,7 @@ async function processBranches(directory,tBranch,data,group,num) {
     for (const branch of branches) {
         if(branch!=TARGET_BRANCH){
             console.log(`Processing branch: ${branch}`);
-            const prLink = await createPullRequest(branch);
+            const prLink = await createPullRequest(branch,message);
             if (prLink) {
                 console.log(`Open this link to resolve conflicts: ${prLink}`);
                 await openInBrowser(prLink)
