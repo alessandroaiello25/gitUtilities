@@ -65,7 +65,7 @@ function mergePackageXmlObjects(obj1, obj2) {
 
     if(obj2.Package.types){
         obj2.Package.types.forEach(type2 => {
-            const existingType = merged.Package.types.find(
+            const existingType = merged.Package.types?.find(
                 type1 => type1.name[0] === type2.name[0]
             );
     
@@ -76,6 +76,11 @@ function mergePackageXmlObjects(obj1, obj2) {
                 ]);
                 existingType.members = Array.from(membersSet).sort();
             } else {
+
+                if (!merged.Package.types) {
+                    merged.Package.types = [];
+                }
+
                 merged.Package.types.push({
                     name: type2.name,
                     members: Array.from(new Set(type2.members)).sort()
@@ -85,13 +90,16 @@ function mergePackageXmlObjects(obj1, obj2) {
     }
 
     // Ensure types are sorted by name
-    merged.Package.types.sort((a, b) => a.name[0].localeCompare(b.name[0]));
+    if(merged.Package.types){
+      merged.Package.types.sort((a, b) => a.name[0].localeCompare(b.name[0]));
 
-    // Restructure types so members are listed before name
-    merged.Package.types = merged.Package.types.map(type => ({
-        members: type.members,
-        name: type.name
-    }));
+      // Restructure types so members are listed before name
+      merged.Package.types = merged.Package.types.map(type => ({
+          members: type.members,
+          name: type.name
+      }));
+    }
+    
 
     // Update version to the higher one
     merged.Package.version[0] = compareVersions(
