@@ -25,6 +25,11 @@
              [(ngModel)]="state.workItemId" name="workItemId" required>
     </div>
     <div class="mb-3" *ngIf="state.mode === 'manual'">
+      <label class="form-label">Work Item IDs (one per line or comma separated)</label>
+      <textarea class="form-control" rows="3" placeholder="Enter work item IDs"
+                [(ngModel)]="state.manualWorkItems" name="manualWorkItems"></textarea>
+    </div>
+    <div class="mb-3" *ngIf="state.mode === 'manual'">
       <label class="form-label">Branch Names (one per line)</label>
       <textarea class="form-control" rows="5" placeholder="Enter branch names"
                 [(ngModel)]="state.manualBranches" name="manualBranches"></textarea>

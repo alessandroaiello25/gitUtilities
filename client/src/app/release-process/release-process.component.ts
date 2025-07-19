@@ -10,6 +10,7 @@ export interface ReleaseState {
   mode: 'workitem' | 'manual';
   workItemId: string;
   manualBranches: string;
+  manualWorkItems: string;
   computedBranches: string[];
   selectedBranches: string[]; // now supports multiple selections
   wiToBranch?: { [key: string]: string[] };
@@ -31,6 +32,7 @@ export class ReleaseProcessComponent implements OnInit {
     mode: 'workitem',
     workItemId: '',
     manualBranches: '',
+    manualWorkItems: '',
     computedBranches: [],
     selectedBranches: []
   };
@@ -103,18 +105,46 @@ export class ReleaseProcessComponent implements OnInit {
           }
         });
     } else {
-      // Manual mode: split the entered manualBranches text by newlines.
-      let lines = this.state.manualBranches.split('\n')
-        .map(line => line.trim())
-        .filter(line => line.length > 0);
+      const wiLines = this.state.manualWorkItems.split(/\n|,/)
+        .map(l => l.trim())
+        .filter(l => l.length > 0);
 
-      if (lines.length === 0) {
-        this.toastService.showToast('Error', 'Please enter at least one branch.');
-        return;
+      if (wiLines.length > 0) {
+        this.http.post<{ wiToBranch: { [key: string]: string[] }, branchToWI: { [branch: string]: string }, branches: string[] }>
+          (`${this.apiBase}/manualWorkItems`, { ids: wiLines, credentialId: this.credentialId })
+          .subscribe({
+            next: res => {
+              this.state.computedBranches = res.branches;
+              this.state.wiToBranch = res.wiToBranch;
+              this.state.branchMapping = res.branchToWI;
+              if (this.state.computedBranches.length === 0) {
+                this.toastService.showToast('Error', 'No branches found for these work items.');
+                return;
+              }
+              this.state.manualBranches = this.state.computedBranches.join('\n');
+              this.state.selectedBranches = [...this.state.computedBranches];
+              this.currentStep = 2;
+            },
+            error: err => {
+              const msg = err.error?.error || 'Failed to retrieve branches.';
+              this.toastService.showToast('Error', msg);
+              console.error(err);
+            }
+          });
+      } else {
+        // Manual branches provided directly
+        let lines = this.state.manualBranches.split('\n')
+          .map(line => line.trim())
+          .filter(line => line.length > 0);
+
+        if (lines.length === 0) {
+          this.toastService.showToast('Error', 'Please enter at least one branch.');
+          return;
+        }
+        this.state.computedBranches = lines;
+        this.state.selectedBranches = [...lines];
+        this.currentStep = 2;
       }
-      this.state.computedBranches = lines;
-      this.state.selectedBranches = [...lines];
-      this.currentStep = 2;
     }
   }
 
@@ -130,6 +160,15 @@ export class ReleaseProcessComponent implements OnInit {
     if (!this.state.selectedBranches || this.state.selectedBranches.length === 0) {
       this.toastService.showToast('Error', 'Please select at least one branch.');
       return;
+    }
+    if (this.state.mode === 'manual') {
+      this.http.post(`${this.apiBase}/manualBranches`, { branches: this.state.selectedBranches })
+        .subscribe({
+          error: err => {
+            console.error(err);
+            this.toastService.showToast('Error', 'Failed to save branches.');
+          }
+        });
     }
     const summary = `Credential ID: ${this.credentialId}\n` +
                     `Target Branch: ${this.state.targetBranch}\n` +
