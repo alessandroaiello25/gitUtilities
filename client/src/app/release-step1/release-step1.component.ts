@@ -25,8 +25,10 @@ export class ReleaseStep1Component {
       this.toastService.showToast('Error', 'Work item ID is required.');
       return;
     }
-    if (this.state.mode === 'manual' && !this.state.manualBranches.trim()) {
-      this.toastService.showToast('Error', 'Please enter branch names.');
+    if (this.state.mode === 'manual' &&
+        !this.state.manualBranches.trim() &&
+        !this.state.manualWorkItems.trim()) {
+      this.toastService.showToast('Error', 'Please enter branches or work item IDs.');
       return;
     }
     // Emit the collected state to the parent.

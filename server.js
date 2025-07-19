@@ -1,6 +1,7 @@
 // server.js
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 const data = require('./data');
 const branchWI = require(__dirname + '/branchWI');
 
@@ -40,6 +41,74 @@ app.get('/api/branches', (req, res) => {
       .catch(err => {
         console.error(err);
         res.status(500).json({ error: err.message });
+      });
+  });
+});
+
+// Endpoint: Save manually entered branches to the branches file
+app.post('/api/manualBranches', (req, res) => {
+  const branches = req.body.branches;
+  if (!Array.isArray(branches) || branches.length === 0) {
+    return res.status(400).json({ error: 'branches array is required.' });
+  }
+  try {
+    const filePath = path.join(__dirname, 'branches');
+    let existing = [];
+    if (fs.existsSync(filePath)) {
+      existing = fs.readFileSync(filePath, 'utf-8').split('\n').filter(b => b);
+    }
+    const remaining = existing.filter(b => !branches.includes(b));
+    const updated = [...branches, ...remaining];
+    fs.writeFileSync(filePath, updated.join('\n'), 'utf-8');
+    res.json({ message: 'Branches saved.' });
+  } catch (err) {
+    console.error('Error writing branches file:', err);
+    res.status(500).json({ error: 'Failed to save branches.' });
+  }
+});
+
+// Endpoint: Retrieve branches for manually entered work item IDs and store mapping
+app.post('/api/manualWorkItems', (req, res) => {
+  const { ids, credentialId } = req.body;
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return res.status(400).json({ error: 'ids array is required.' });
+  }
+  if (!credentialId) {
+    return res.status(400).json({ error: 'credentialId is required.' });
+  }
+  data.getDataById(credentialId, (err, credentialData) => {
+    if (err) {
+      return res.status(500).json({ error: 'Error retrieving credential settings.' });
+    }
+    Promise.all(ids.map(id => branchWI.getWorkItemsByStatus(id, credentialData)))
+      .then(results => {
+        const branchesSet = new Set();
+        const wiToBranch = {};
+        const branchToWI = {};
+        for (const r of results) {
+          if (r.branches) {
+            r.branches.forEach(b => branchesSet.add(b));
+          }
+          if (r.wiToBranch) {
+            for (const [wi, brs] of Object.entries(r.wiToBranch)) {
+              if (!wiToBranch[wi]) wiToBranch[wi] = [];
+              for (const b of brs) {
+                if (!wiToBranch[wi].includes(b)) wiToBranch[wi].push(b);
+              }
+            }
+          }
+          if (r.branchToWI) {
+            Object.assign(branchToWI, r.branchToWI);
+          }
+        }
+        const branchList = Array.from(branchesSet);
+        fs.writeFileSync(path.join(__dirname, 'branches'), branchList.join('\n'), 'utf-8');
+        fs.writeFileSync(path.join(__dirname, 'branchWI.json'), JSON.stringify(branchToWI), 'utf-8');
+        res.json({ branches: branchList, wiToBranch, branchToWI });
+      })
+      .catch(error => {
+        console.error(error);
+        res.status(500).json({ error: 'Failed to retrieve work item data.' });
       });
   });
 });
