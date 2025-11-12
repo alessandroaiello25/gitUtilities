@@ -207,8 +207,6 @@ async function processBranches(directory,tBranch,data,group,num,message) {
 
     fs.writeFileSync(__dirname+'/branch2wi.json',JSON.stringify(resultB2WI),'utf-8')
 
-    rl.close();
-
     console.log(`Checkout and fetch from origin/${TARGET_BRANCH}`)
     execSync(`git fetch`,{cwd: directory})
     try {
@@ -218,6 +216,47 @@ async function processBranches(directory,tBranch,data,group,num,message) {
     }
     
     execSync(`git pull origin ${TARGET_BRANCH}`,{cwd: directory})
+}
+
+async function openPR(directory,sourceBranch,tBranch,data,message){
+    if(tBranch){
+        TARGET_BRANCH = tBranch
+    }
+
+    let branch = sourceBranch
+
+    if(data){
+        AZURE_ORG_URL = data[0].azure_org_url
+        PROJECT = data[0].project
+        REPOSITORY = data[0].repository
+        PAT = data[0].decrypted_pat
+    }
+
+    if(!PAT || !AZURE_ORG_URL || !REPOSITORY || !PROJECT){
+        console.error('ERROR RETRIEVING SETTINGS')
+        return
+    }
+
+     if(sourceBranch!=TARGET_BRANCH){
+        console.log(`Processing branch: ${branch}`);
+        const prLink = await createPullRequest(branch,message);
+        if (prLink) {
+            console.log(`Open this link to resolve conflicts: ${prLink}`);
+            await openInBrowser(prLink)
+            await waitForCompletion(directory);
+
+            if(!tBranch2WI[TARGET_BRANCH]){
+                tBranch2WI[TARGET_BRANCH] = []
+            }
+
+        } else {
+            console.error(`Skipping branch ${branch} due to error.`);
+        }
+    }
+
+    console.log("PR processed.");
+
+    execSync(`git fetch`,{cwd: directory})
 }
 
 async function openInBrowser(url) {
@@ -239,5 +278,6 @@ async function openInBrowser(url) {
 }
 
 module.exports = {
-    processBranches
+    processBranches,
+    openPR
 }

@@ -143,6 +143,14 @@ async function chooseBranch(workItem, brs, relations,witoBranch) {
     console.log('Branch scelto: ' + answer);
 }
 
+function setBranchWI(branch, wi){
+    if(branch && wi){
+        let branchWI = {}
+        branchWI[branch] = wi ? Number(wi) : undefined
+        fs.writeFileSync(__dirname+'/branch2wi.json',JSON.stringify(branchWI),'utf-8')
+    }
+}
+
 function estraiNomeBranch(url) {
     // Decodifica l'URL
     const urlDecodificato = decodeURIComponent(url);
@@ -162,5 +170,6 @@ function estraiNomeBranch(url) {
     return nomeBranch; // Restituisce il nome del branch
 }
 module.exports = {
-    getWorkItemsByStatus
+    getWorkItemsByStatus,
+    setBranchWI
 }

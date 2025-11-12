@@ -16,6 +16,9 @@ var sf = false
 var targetOrg
 var val = true
 var message
+var sourceBranch
+var sourceWI
+var opr = false
 
 for(let i=0;i<process.argv.length;i++){
     switch(process.argv[i]){
@@ -72,6 +75,18 @@ for(let i=0;i<process.argv.length;i++){
 
         case '-m':
             message = process.argv[i+1]
+            break
+
+        case '-o':
+            opr = true;
+            break;
+        
+        case '-s':
+            sourceBranch = process.argv[i+1]
+            break
+
+        case '-sw':
+            sourceWI = process.argv[i+1]
             break
 
     }
@@ -157,20 +172,36 @@ async function execute(){
         }
     
         else {
-            if(pr){
+
+            if(opr){
+                const br = require(__dirname+'/branch')
+                sourceBranch = sourceBranch || br.getCurrentBranch(directory)
+                const branchWI = require(__dirname+'/branchWI')
+                console.log('Pull '+sourceBranch+' into '+TARGET_BRANCH)
+                branchWI.setBranchWI(sourceBranch,sourceWI)
+
                 pull_request = require(__dirname+'/pull_request')
-                pull_request.processBranches(directory,TARGET_BRANCH,data,group,num,message)
+                pull_request.openPR(directory,sourceBranch,TARGET_BRANCH,data,message)
             }
-        
+
             else {
-                if(t){
-                    testClasses = require(__dirname+'/testClasses')
-                    testClasses.mergeJsonFilesToTargetBranch(directory,'manifest/sfdc_test_classes.json',TARGET_BRANCH,group,num)
-                } else if(package) {
-                    packageXml = require(__dirname+'/packageXml.js')
-                    packageXml.mergePackageXmlFilesToTargetBranch(directory,'manifest/package.xml',TARGET_BRANCH,group,num)
+                if(pr){
+                    pull_request = require(__dirname+'/pull_request')
+                    pull_request.processBranches(directory,TARGET_BRANCH,data,group,num,message)
+                }
+            
+                else {
+                    if(t){
+                        testClasses = require(__dirname+'/testClasses')
+                        testClasses.mergeJsonFilesToTargetBranch(directory,'manifest/sfdc_test_classes.json',TARGET_BRANCH,group,num)
+                    } else if(package) {
+                        packageXml = require(__dirname+'/packageXml.js')
+                        packageXml.mergePackageXmlFilesToTargetBranch(directory,'manifest/package.xml',TARGET_BRANCH,group,num)
+                    }
                 }
             }
+
+            
         }
 
         if(sf && targetOrg){
