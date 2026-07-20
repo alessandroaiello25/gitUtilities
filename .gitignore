@@ -9,3 +9,5 @@ branch2wi.json
 run.exe
 *.log
 metadataMerger2.1.exe
+.codex/*
+cline_mcp_settings.json

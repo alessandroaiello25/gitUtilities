@@ -1,5 +1,7 @@
 # Istruzioni di installazione e avvio
 
+Per l'uso operativo della CLI e della web app consulta la [guida utente](GUIDA_UTENTE.md).
+
 ## Prerequisiti
 
 * **Node.js:** Assicurati di avere Node.js installato sul tuo sistema. Puoi scaricarlo dal sito ufficiale: [https://nodejs.org/](https://nodejs.org/)
