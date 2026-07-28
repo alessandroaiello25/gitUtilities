@@ -11,3 +11,7 @@ run.exe
 metadataMerger2.1.exe
 .codex/*
 cline_mcp_settings.json
+release-state.db
+release-state.db-*
+dist-server
+release-worktrees
